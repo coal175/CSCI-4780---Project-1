@@ -47,6 +47,10 @@ public class client {
 				
 				System.out.println("finished sending file");
 				continue;
+			}else if(inputArray[0].equals("quit")){
+				outServer.writeBytes(s + "\n");
+				socket.close();
+				break;
 			}
 			
 			outServer.writeBytes(s + "\n");
