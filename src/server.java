@@ -14,16 +14,24 @@ import java.nio.file.Paths;
 public class server {
 	public static void main(String[] args) throws Exception {
 		
+		
+		Socket socket = null;
+		ServerSocket s = new ServerSocket(5000);
+		
+		for(int i = 0; i < 3; i++){
+			System.out.println("ready to accept");
+			socket = s.accept();
+
+			loop(socket);
+		}
+		socket.close();
+	}
+	
+	public static void loop(Socket socket) throws Exception{
 		//Get current directory
 		File cwd = new File(".");
 		cwd = cwd.getAbsoluteFile().getParentFile().getParentFile(); //This code need some work.  It is probably an AWFUL way to do things
-		System.out.println(cwd.getAbsolutePath());
-		//cwd = new File(cwd.getAbsoluteFile() + "\\..");
-		//cwd = cwd.getAbsoluteFile().getParentFile();
-		//System.out.println(cwd.getAbsolutePath());
-
-		Socket socket = (new ServerSocket(5000)).accept();
-
+		
 		BufferedReader inClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		DataOutputStream outClient = new DataOutputStream(socket.getOutputStream());
 		
@@ -31,6 +39,7 @@ public class server {
 			String line = inClient.readLine();
 			
 			if(line != null){
+				System.out.println(line);
 				String[] arr = line.split(" ");
 				
 				if(arr[0].equals("get") && arr.length == 2){ //check if the command is get and if there is an argument
@@ -87,8 +96,39 @@ public class server {
 					}
 		
 					outClient.writeBytes(cwd.getAbsolutePath() + "\n");
+				}else if(arr[0].equals("delete") && arr.length == 2){
+					File deleteFile = new File(cwd.getAbsolutePath() + "\\" + arr[1]);
+					System.out.println(deleteFile.getAbsolutePath());
+					
+					if(!deleteFile.exists()){
+						outClient.writeBytes("File does not exist\n");
+						continue;
+					}
+					System.out.println("File found");
+					
+					if(!deleteFile.delete()){
+						outClient.writeBytes("Delete failed\n");
+					}else{
+						outClient.writeBytes("Delete Succeeded\n");
+					}
+				}else if(arr[0].equals("mkdir") && arr.length == 2){
+					File newDirectory = new File(cwd.getAbsolutePath() + "\\" + arr[1]);
+					System.out.println(newDirectory.getAbsolutePath());
+					
+					if(newDirectory.exists()){
+						outClient.writeBytes("Folder already exists\n");
+						continue;
+					}
+					System.out.println("Folder not found");
+					
+					if(!newDirectory.mkdir()){
+						outClient.writeBytes("mkdir failed\n");
+					}else{
+						outClient.writeBytes("mkdir succeeded\n");
+					}
+				}else if(arr[0].equals("quit") && arr.length == 1){
+					break;
 				}else{
-				
 					outClient.writeBytes("Command not recognized\n");
 				}
 			}
